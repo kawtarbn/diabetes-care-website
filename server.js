@@ -30,7 +30,7 @@ const SALT_ROUNDS = 10;
 // Trust proxy for rate limiting behind proxy
 app.set('trust proxy', 1);
 
-// Professional Logging Configuration
+// Professional Logging Configuration (console-only for Vercel)
 const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
     format: winston.format.combine(
@@ -40,22 +40,11 @@ const logger = winston.createLogger({
     ),
     defaultMeta: { service: 'diabetes-care-api' },
     transports: [
-        new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-        new winston.transports.File({ filename: 'logs/combined.log' })
+        new winston.transports.Console({
+            format: winston.format.simple()
+        })
     ]
 });
-
-if (process.env.NODE_ENV !== 'production') {
-    logger.add(new winston.transports.Console({
-        format: winston.format.simple()
-    }));
-}
-
-// Create logs directory if it doesn't exist
-const logsDir = path.join(__dirname, 'logs');
-if (!fs.existsSync(logsDir)) {
-    fs.mkdirSync(logsDir);
-}
 
 // Security Middleware
 app.use(helmet({
@@ -168,23 +157,13 @@ app.use('/api/register', authLimiter);
 app.use('/api/forgot-password', authLimiter);
 app.use('/api/reset-password', authLimiter);
 
-// Create data directory if it doesn't exist
-const dataDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir);
-}
-
-// Initialize data files
-const initializeDataFiles = () => {
-    const files = ['users.json', 'patients.json', 'meals.json', 'appointments.json'];
-    files.forEach(file => {
-        const filePath = path.join(dataDir, file);
-        if (!fs.existsSync(filePath)) {
-            fs.writeFileSync(filePath, '[]');
-        }
-    });
+// In-memory data storage for Vercel serverless
+const dataStore = {
+    users: [],
+    patients: [],
+    meals: [],
+    appointments: []
 };
-initializeDataFiles();
 
 // Swagger API Documentation
 const swaggerOptions = {
@@ -325,10 +304,9 @@ app.post('/api/register', async (req, res) => {
         }
         
         const { name, email, password, role } = value;
-        const users = JSON.parse(fs.readFileSync(path.join(dataDir, 'users.json')));
         
         // Check if user already exists
-        if (users.find(u => u.email === email)) {
+        if (dataStore.users.find(u => u.email === email)) {
             logger.warn(`Registration attempt with existing email: ${email}`);
             return res.status(409).json({ error: 'User already exists' });
         }
@@ -346,8 +324,7 @@ app.post('/api/register', async (req, res) => {
             createdAt: new Date().toISOString()
         };
         
-        users.push(newUser);
-        fs.writeFileSync(path.join(dataDir, 'users.json'), JSON.stringify(users, null, 2));
+        dataStore.users.push(newUser);
         
         logger.info(`New user registered: ${email}`);
         
@@ -410,9 +387,8 @@ app.post('/api/login', async (req, res) => {
         }
         
         const { email, password } = value;
-        const users = JSON.parse(fs.readFileSync(path.join(dataDir, 'users.json')));
         
-        const user = users.find(u => u.email === email.toLowerCase().trim());
+        const user = dataStore.users.find(u => u.email === email.toLowerCase().trim());
         if (!user) {
             logger.warn(`Login attempt with non-existent email: ${email}`);
             return res.status(401).json({ error: 'Invalid credentials' });
@@ -493,8 +469,7 @@ app.post('/api/forgot-password', async (req, res) => {
             return res.status(400).json({ error: 'Email is required' });
         }
         
-        const users = JSON.parse(fs.readFileSync(path.join(dataDir, 'users.json')));
-        const user = users.find(u => u.email === email.toLowerCase().trim());
+        const user = dataStore.users.find(u => u.email === email.toLowerCase().trim());
         
         if (!user) {
             // Don't reveal if email exists for security
@@ -509,10 +484,9 @@ app.post('/api/forgot-password', async (req, res) => {
         );
         
         // Store reset token in user data
-        const userIndex = users.findIndex(u => u.email === email.toLowerCase().trim());
-        users[userIndex].resetToken = resetToken;
-        users[userIndex].resetTokenExpiry = new Date(Date.now() + 3600000).toISOString(); // 1 hour
-        fs.writeFileSync(path.join(dataDir, 'users.json'), JSON.stringify(users, null, 2));
+        const userIndex = dataStore.users.findIndex(u => u.email === email.toLowerCase().trim());
+        dataStore.users[userIndex].resetToken = resetToken;
+        dataStore.users[userIndex].resetTokenExpiry = new Date(Date.now() + 3600000).toISOString(); // 1 hour
         
         // Send email (if email configuration is set up)
         if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
@@ -592,20 +566,19 @@ app.post('/api/reset-password', async (req, res) => {
         
         // Verify token
         const decoded = jwt.verify(token, JWT_SECRET);
-        const users = JSON.parse(fs.readFileSync(path.join(dataDir, 'users.json')));
-        const userIndex = users.findIndex(u => u.id === decoded.id);
+        const userIndex = dataStore.users.findIndex(u => u.id === decoded.id);
         
         if (userIndex === -1) {
             return res.status(400).json({ error: 'Invalid token' });
         }
         
         // Check if token matches
-        if (users[userIndex].resetToken !== token) {
+        if (dataStore.users[userIndex].resetToken !== token) {
             return res.status(400).json({ error: 'Invalid or expired token' });
         }
         
         // Check if token expired
-        if (new Date(users[userIndex].resetTokenExpiry) < new Date()) {
+        if (new Date(dataStore.users[userIndex].resetTokenExpiry) < new Date()) {
             return res.status(400).json({ error: 'Token has expired' });
         }
         
@@ -613,12 +586,11 @@ app.post('/api/reset-password', async (req, res) => {
         const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
         
         // Update user
-        users[userIndex].password = hashedPassword;
-        users[userIndex].resetToken = null;
-        users[userIndex].resetTokenExpiry = null;
-        fs.writeFileSync(path.join(dataDir, 'users.json'), JSON.stringify(users, null, 2));
+        dataStore.users[userIndex].password = hashedPassword;
+        dataStore.users[userIndex].resetToken = null;
+        dataStore.users[userIndex].resetTokenExpiry = null;
         
-        logger.info(`Password reset successful for user: ${users[userIndex].email}`);
+        logger.info(`Password reset successful for user: ${dataStore.users[userIndex].email}`);
         
         res.status(200).json({ message: 'Password reset successful' });
     } catch (error) {
@@ -640,7 +612,7 @@ app.post('/api/patient-profile', authenticateToken, (req, res) => {
             return res.status(403).json({ error: 'Access denied' });
         }
         
-        const patients = JSON.parse(fs.readFileSync(path.join(dataDir, 'patients.json')));
+        const patients = dataStore.patients;
         
         const existingIndex = patients.findIndex(p => p.userId === userId);
         const profileData = {
@@ -653,14 +625,11 @@ app.post('/api/patient-profile', authenticateToken, (req, res) => {
         };
         
         if (existingIndex >= 0) {
-            patients[existingIndex] = profileData;
+            patients[existingIndex] = { ...patients[existingIndex], ...profileData };
         } else {
             profileData.createdAt = new Date().toISOString();
             patients.push(profileData);
         }
-        
-        fs.writeFileSync(path.join(dataDir, 'patients.json'), JSON.stringify(patients, null, 2));
-        res.json({ message: 'Profile saved successfully' });
     } catch (error) {
         console.error('Profile save error:', error);
         res.status(500).json({ error: 'Internal server error' });
@@ -676,7 +645,7 @@ app.get('/api/patient-profile/:userId', authenticateToken, (req, res) => {
             return res.status(403).json({ error: 'Access denied' });
         }
         
-        const patients = JSON.parse(fs.readFileSync(path.join(dataDir, 'patients.json')));
+        const patients = dataStore.patients;
         const profile = patients.find(p => p.userId === requestedUserId);
         res.json(profile || null);
     } catch (error) {
@@ -701,7 +670,7 @@ app.post('/api/meals', authenticateToken, (req, res) => {
             return res.status(400).json({ error: 'Invalid meal type' });
         }
         
-        const meals = JSON.parse(fs.readFileSync(path.join(dataDir, 'meals.json')));
+        const meals = dataStore.meals;
         
         const newMeal = {
             id: Date.now(),
@@ -711,11 +680,12 @@ app.post('/api/meals', authenticateToken, (req, res) => {
             calories: parseInt(calories) || 0,
             carbs: parseInt(carbs) || 0,
             bloodSugarAfter: bloodSugarAfter ? parseInt(bloodSugarAfter) : null,
-            date: new Date().toISOString()
+            date: new Date().toISOString(),
+            servingSize: req.body.servingSize || null,
+            unit: req.body.unit || null
         };
         
         meals.push(newMeal);
-        fs.writeFileSync(path.join(dataDir, 'meals.json'), JSON.stringify(meals, null, 2));
         res.json({ message: 'Meal logged successfully' });
     } catch (error) {
         console.error('Meal log error:', error);
@@ -732,7 +702,7 @@ app.get('/api/meals/:userId', authenticateToken, (req, res) => {
             return res.status(403).json({ error: 'Access denied' });
         }
         
-        const meals = JSON.parse(fs.readFileSync(path.join(dataDir, 'meals.json')));
+        const meals = dataStore.meals;
         const userMeals = meals.filter(m => m.userId === requestedUserId);
         res.json(userMeals);
     } catch (error) {
@@ -751,7 +721,7 @@ app.post('/api/appointments', authenticateToken, (req, res) => {
             return res.status(403).json({ error: 'Access denied' });
         }
         
-        const appointments = JSON.parse(fs.readFileSync(path.join(dataDir, 'appointments.json')));
+        const appointments = dataStore.appointments;
         
         const newAppointment = {
             id: Date.now(),
@@ -765,7 +735,6 @@ app.post('/api/appointments', authenticateToken, (req, res) => {
         };
         
         appointments.push(newAppointment);
-        fs.writeFileSync(path.join(dataDir, 'appointments.json'), JSON.stringify(appointments, null, 2));
         res.json({ message: 'Appointment booked successfully' });
     } catch (error) {
         console.error('Appointment booking error:', error);
@@ -782,7 +751,7 @@ app.get('/api/appointments/patient/:patientId', authenticateToken, (req, res) =>
             return res.status(403).json({ error: 'Access denied' });
         }
         
-        const appointments = JSON.parse(fs.readFileSync(path.join(dataDir, 'appointments.json')));
+        const appointments = dataStore.appointments;
         const patientAppointments = appointments.filter(a => a.patientId === requestedPatientId);
         res.json(patientAppointments);
     } catch (error) {
@@ -800,7 +769,7 @@ app.get('/api/appointments/doctor/:doctorId', authenticateToken, (req, res) => {
             return res.status(403).json({ error: 'Access denied' });
         }
         
-        const appointments = JSON.parse(fs.readFileSync(path.join(dataDir, 'appointments.json')));
+        const appointments = dataStore.appointments;
         const doctorAppointments = appointments.filter(a => a.doctorId === requestedDoctorId);
         res.json(doctorAppointments);
     } catch (error) {
