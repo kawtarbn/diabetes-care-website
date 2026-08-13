@@ -1,8 +1,5 @@
-module.exports = (req, res) => {
-  res.status(200).json({ 
-    status: 'ok', 
-    message: 'API is running',
-    method: req.method,
-    url: req.url
-  });
-};
+const express = require('express');
+const { createServer } = require('@vercel/express');
+const app = require('../server');
+
+module.exports = createServer(app);
