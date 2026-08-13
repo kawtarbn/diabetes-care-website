@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetes Care - Your Health Partner</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">Diabetes Care</div>
+            <ul class="nav-menu">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#education">Education</a></li>
+                <li><a href="#login" class="btn-login">Login</a></li>
+                <li><a href="#register" class="btn-register">Register</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>Manage Your Diabetes with Confidence</h1>
+            <p>Connect with doctors, track your diet, and access educational resources all in one place.</p>
+            <div class="hero-buttons">
+                <a href="#register" class="btn btn-primary">Get Started</a>
+                <a href="#features" class="btn btn-secondary">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2>Our Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">👤</div>
+                    <h3>Personal Profile</h3>
+                    <p>Store your diabetes information, medications, and health history securely.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🍎</div>
+                    <h3>Diet Tracking</h3>
+                    <p>Log your meals, track calories and carbs, monitor blood sugar impact.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👨‍⚕️</div>
+                    <h3>Doctor Consultations</h3>
+                    <p>Book appointments with certified diabetes specialists easily.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📚</div>
+                    <h3>Education Hub</h3>
+                    <p>Access reliable information about diabetes management and care.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <h3>Secure Access</h3>
+                    <p>Your health data is protected with secure authentication.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Login Section -->
+    <section id="login" class="auth-section">
+        <div class="container">
+            <div class="auth-card">
+                <h2>Login</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+                <p class="auth-switch">Don't have an account? <a href="#register">Register</a></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Register Section -->
+    <section id="register" class="auth-section">
+        <div class="container">
+            <div class="auth-card">
+                <h2>Register</h2>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="registerName">Full Name</label>
+                        <input type="text" id="registerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Password</label>
+                        <input type="password" id="registerPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerRole">I am a:</label>
+                        <select id="registerRole" required>
+                            <option value="patient">Patient</option>
+                            <option value="doctor">Doctor</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Register</button>
+                </form>
+                <p class="auth-switch">Already have an account? <a href="#login">Login</a></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Patient Dashboard (Hidden by default) -->
+    <section id="patientDashboard" class="dashboard hidden">
+        <div class="container">
+            <div class="dashboard-header">
+                <h2>Patient Dashboard</h2>
+                <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+            </div>
+            
+            <div class="dashboard-tabs">
+                <button class="tab-btn active" data-tab="profile">Profile</button>
+                <button class="tab-btn" data-tab="diet">Diet Tracking</button>
+                <button class="tab-btn" data-tab="appointments">Appointments</button>
+            </div>
+
+            <!-- Profile Tab -->
+            <div id="profileTab" class="tab-content active">
+                <div class="card">
+                    <h3>Your Health Profile</h3>
+                    <form id="profileForm">
+                        <div class="form-group">
+                            <label for="diabetesType">Diabetes Type</label>
+                            <select id="diabetesType" required>
+                                <option value="">Select Type</option>
+                                <option value="type1">Type 1</option>
+                                <option value="type2">Type 2</option>
+                                <option value="gestational">Gestational</option>
+                                <option value="prediabetes">Prediabetes</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="bloodSugarTarget">Blood Sugar Target (mg/dL)</label>
+                            <input type="text" id="bloodSugarTarget" placeholder="e.g., 80-130">
+                        </div>
+                        <div class="form-group">
+                            <label for="medications">Medications</label>
+                            <textarea id="medications" rows="3" placeholder="List your medications..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="notes">Additional Notes</label>
+                            <textarea id="notes" rows="3" placeholder="Any other health information..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Profile</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Diet Tab -->
+            <div id="dietTab" class="tab-content">
+                <div class="card">
+                    <h3>Log Your Meal</h3>
+                    <form id="mealForm">
+                        <div class="form-group">
+                            <label for="mealType">Meal Type</label>
+                            <select id="mealType" required>
+                                <option value="breakfast">Breakfast</option>
+                                <option value="lunch">Lunch</option>
+                                <option value="dinner">Dinner</option>
+                                <option value="snack">Snack</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="food">Food Description</label>
+                            <input type="text" id="food" required placeholder="What did you eat?">
+                        </div>
+                        <div class="form-group">
+                            <label for="calories">Calories</label>
+                            <input type="number" id="calories" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="carbs">Carbohydrates (g)</label>
+                            <input type="number" id="carbs" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="bloodSugarAfter">Blood Sugar After Meal (mg/dL)</label>
+                            <input type="number" id="bloodSugarAfter" placeholder="Optional">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Log Meal</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h3>Recent Meals</h3>
+                    <div id="mealsList"></div>
+                </div>
+            </div>
+
+            <!-- Appointments Tab -->
+            <div id="appointmentsTab" class="tab-content">
+                <div class="card">
+                    <h3>Book Appointment</h3>
+                    <form id="appointmentForm">
+                        <div class="form-group">
+                            <label for="appointmentDate">Date</label>
+                            <input type="date" id="appointmentDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="appointmentTime">Time</label>
+                            <input type="time" id="appointmentTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="appointmentReason">Reason</label>
+                            <textarea id="appointmentReason" rows="3" required placeholder="Why do you need an appointment?"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Book Appointment</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h3>Your Appointments</h3>
+                    <div id="appointmentsList"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Education Section -->
+    <section id="education" class="education">
+        <div class="container">
+            <h2>Diabetes Education</h2>
+            <div id="educationContent" class="education-grid"></div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Diabetes Care. Your health partner.</p>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
