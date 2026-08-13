@@ -1,4 +1,8 @@
-export default function handler(req, res) {
-    res.setHeader('Content-Type', 'application/json');
-    res.status(200).json({ status: 'ok', message: 'API is running' });
-}
+module.exports = (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    message: 'API is running',
+    method: req.method,
+    url: req.url
+  });
+};
