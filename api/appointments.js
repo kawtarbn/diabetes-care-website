@@ -1,6 +1,6 @@
 const { dataStore, authenticateToken, sendResponse } = require('./_lib');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
     const { patientId, doctorId } = req.query;
     
     if (req.method === 'POST') {
@@ -49,4 +49,4 @@ export default async function handler(req, res) {
     } else {
         res.status(405).json({ error: 'Method not allowed' });
     }
-}
+};
